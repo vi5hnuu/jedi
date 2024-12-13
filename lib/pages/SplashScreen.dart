@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
       LoggerSingleton().logger.i('Ads ${value.adapterStatuses.keys.join(',')} : ${value.adapterStatuses.values.join(',')}');
       goToHome();
     });
-    timer=Timer(const Duration(seconds: 5),(){
+    timer=Timer(const Duration(seconds: 3),(){
       if(!mounted) return;
       if(adsInitilized) goToHome();
     });
@@ -54,7 +54,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 75,vertical: 125),
-              child:LottieBuilder.asset("assets/lottie/files.json",fit: BoxFit.fitWidth,animate: true,backgroundLoading: true,),
+              child:LottieBuilder.asset("assets/lottie/document_loading.json",fit: BoxFit.fitWidth,animate: true,backgroundLoading: true,),
             ),
             Column(
               children: [

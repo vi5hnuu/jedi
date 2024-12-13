@@ -22,12 +22,6 @@ final GlobalKey<NavigatorState> _homeNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'home');
 final GlobalKey<NavigatorState> _filesNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'files');
-final GlobalKey<NavigatorState> _toolsNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'tools');
-final GlobalKey<NavigatorState> _scannerNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'scanner');
-final GlobalKey<NavigatorState> _settingsNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'settings');
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -162,12 +156,12 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         canvasColor: Colors.white,
-        brightness: Brightness.dark,
+        brightness: Brightness.light,
         // Ensures dark mode defaults
-        scaffoldBackgroundColor: Colors.black,
+        scaffoldBackgroundColor: Color.fromRGBO(194, 255, 199, 1),
         // Black background
         appBarTheme: AppBarTheme(
-          backgroundColor: Colors.black,
+          backgroundColor: Color.fromRGBO(158, 223, 156, 1),
           titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
           iconTheme: IconThemeData(color: Colors.white),
         ),

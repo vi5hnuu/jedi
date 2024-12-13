@@ -90,44 +90,6 @@ class _FilesScreenState extends State<FilesScreen> {
               },)
             ],
           ),
-          Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(left: 18.0,top: 12.0),
-                child: Row(children: [
-                  Text("Cloud Storage",style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold),),
-                ],),
-              ),
-              Column(
-                children: [
-                  StorageTile(trailing: TextButton(onPressed:null,child: const Text("Commin Soon")),leadingIconSvgPath: "assets/icons/google-drive.svg",title: "Google Drive",),
-                  StorageTile(trailing: TextButton(onPressed:null,child: const Text("Commin Soon")),leadingIconSvgPath: "assets/icons/drop-box.svg",title: "DropBox",),
-                  StorageTile(trailing: TextButton(onPressed:null,child: const Text("Commin Soon")),leadingIconSvgPath: "assets/icons/one-drive.svg",title: "OneDrive",),
-                  StorageTile(trailing: TextButton(onPressed:null,child: const Text("Commin Soon")),leadingIconSvgPath: "assets/icons/share-point.svg",title: "SharePoint",),
-                ],
-              )
-            ],
-          ),
-          Column(
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(left: 18.0,top: 12.0),
-                child: Row(children: [
-                  Text("Others",style: TextStyle(fontSize: 24,fontWeight: FontWeight.bold),),
-                ],),
-              ),
-              StreamBuilder<StorageStats>(stream: storageStats.stream, builder: (context, snapshot) {
-                final stats=snapshot.data;
-                return Column(
-                  children: [
-                    StorageTile(onTap:_goToBin,trailing:stats==null || stats.isLoading ?  SizedBox(width: 16,child: SpinKitThreeBounce(color: Colors.white,size: 8,),) : Text(stats.totalFileInBin.toString(),style: TextStyle(fontSize: 16),),
-                      leadingIconSvgPath: "assets/icons/recycle-bin.svg",title: "Bin",),
-                  ],
-                );
-              },)
-
-            ],
-          ),
         ],
       ),
   );
