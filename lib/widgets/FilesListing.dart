@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jedi/models/file-selection-config.dart';
 import 'package:jedi/singletons/NotificationService.dart';
-import 'package:jedi/state/files-state/files_bloc.dart';
+import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/httpStates.dart';
 import 'package:jedi/widgets/DirectoryFilesListing.dart';
@@ -17,7 +17,7 @@ class FilesListing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<FilesBloc,FilesState>(
+    return BlocListener<JsonFilesBloc,JsonFilesState>(
         listenWhen: (previous, current) => previous.httpStates[HttpStates.MOVE_FILE_TO]!=current.httpStates[HttpStates.MOVE_FILE_TO],
         listener: (context, state) {
           final httpState=state.httpStates[HttpStates.PAGE_NUMBERS];
@@ -63,7 +63,6 @@ class FilesListing extends StatelessWidget {
         ],
       );
     });
-    if(deleteApproved==-1) BlocProvider.of<FilesBloc>(context).add(MoveFileTo(to: Constants.binDirPath, file: file));
-    if(deleteApproved==1) BlocProvider.of<FilesBloc>(context).add(DeleteFile(file: file));
+    if(deleteApproved==-1) BlocProvider.of<JsonFilesBloc>(context).add(MoveFileTo(to: Constants.binDirPath, file: file));
   }
 }

@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:open_file/open_file.dart';
 import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/NotificationService.dart';
-import 'package:jedi/state/files-state/files_bloc.dart';
+import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/httpStates.dart';
 import 'package:jedi/utils/utility.dart';
@@ -34,14 +34,14 @@ class DirectoryFilesListing extends StatefulWidget {
 }
 
 class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
-  late final FilesBloc bloc;
+  late final JsonFilesBloc bloc;
   final List<File> selectedFiles=[];
   List<String> pathToDirectory = [];
   List<File> deletedFiles=[];
 
   @override
   void initState() {
-    bloc=BlocProvider.of<FilesBloc>(context);
+    bloc=BlocProvider.of<JsonFilesBloc>(context);
     pathToDirectory = [widget.directoryPath];
     _loadDirectoryFiles(pathToDirectory.last);
     super.initState();
@@ -64,7 +64,7 @@ class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
           });
         }
       },
-      child:  BlocConsumer<FilesBloc,FilesState>(listener: (context, state) {
+      child:  BlocConsumer<JsonFilesBloc,JsonFilesState>(listener: (context, state) {
         final error=state.getError(forr: HttpStates.LOAD_DIRECTORY_FILES);
         if(error!=null){
           NotificationService.showSnackbar(text: error,color: Colors.red);

@@ -24,4 +24,8 @@ class Utility{
   static fileExtension(File file) {
     return '.${file.path.split('.').last}';
   }
+
+  static isJsonFile(File file){
+    return fileExtension(file)=='.json';
+  }
 }

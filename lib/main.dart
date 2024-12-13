@@ -11,7 +11,7 @@ import 'package:jedi/pages/tab-widgets/FilesScreen.dart';
 import 'package:jedi/pages/tab-widgets/HomeScreen.dart';
 import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/NotificationService.dart';
-import 'package:jedi/state/files-state/files_bloc.dart';
+import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/StoragePermissions.dart';
 import 'package:jedi/widgets/FilesListing.dart';
 import 'package:jedi/widgets/FilesManagement.dart';
@@ -154,7 +154,7 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(providers: [
-      BlocProvider(lazy: true,create: (context) => FilesBloc()),
+      BlocProvider(lazy: true,create: (context) => JsonFilesBloc()),
     ], child: MaterialApp.router(
       scaffoldMessengerKey: NotificationService.messengerKey,
       title: 'Pdf craft',

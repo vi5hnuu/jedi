@@ -1,11 +1,11 @@
-part of 'files_bloc.dart';
+part of 'jsonFiles_bloc.dart';
 
 @Immutable("cannot modify aarti state")
-class FilesState extends Equatable with WithHttpState {
+class JsonFilesState extends Equatable with WithHttpState {
   final List<FileSystemEntity> files;
   final Stream<List<File>>? searchStream;
 
-  FilesState._({
+  JsonFilesState._({
     this.files=const [],
     this.searchStream,
     Map<String,HttpState>? httpStates,
@@ -13,14 +13,14 @@ class FilesState extends Equatable with WithHttpState {
     this.httpStates.addAll(httpStates ?? {});
   }
 
-  FilesState.initial() : this._(httpStates: const {});
+  JsonFilesState.initial() : this._(httpStates: const {});
 
-  FilesState copyWith({
+  JsonFilesState copyWith({
     Map<String, HttpState>? httpStates,
   List<FileSystemEntity>? files,
     Stream<List<File>>? searchStream,
   }) {
-    return FilesState._(
+    return JsonFilesState._(
       files: files ?? this.files,
       searchStream: searchStream ?? this.searchStream,
       httpStates: httpStates ?? this.httpStates,

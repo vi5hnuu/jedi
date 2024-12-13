@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:jedi/utils/httpStates.dart';
+import 'package:jedi/utils/utility.dart';
 import 'package:meta/meta.dart';
 import 'package:jedi/extensions/map-entensions.dart';
 import 'package:jedi/models/WithHttpState.dart';
@@ -12,15 +12,14 @@ import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/StoragePermissions.dart';
 import '../../models/HttpState.dart';
 
-part 'files_event.dart';
+part 'jsonFiles_event.dart';
+part 'jsonFiles_state.dart';
 
-part 'files_state.dart';
-
-class FilesBloc extends Bloc<FilesEvent, FilesState> {
+class JsonFilesBloc extends Bloc<JsonFilesEvent, JsonFilesState> {
   StreamSubscription<File>? _searchSubscription;
   StreamController<List<File>>? _searchController;
 
-  FilesBloc() : super(FilesState.initial()) {
+  JsonFilesBloc() : super(JsonFilesState.initial()) {
     on<LoadDirectoryFiles>((event, emit) async {
       emit(state.copyWith(httpStates: state.httpStates.clone()
         ..put(HttpStates.LOAD_DIRECTORY_FILES, const HttpState.loading())));
@@ -49,8 +48,7 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
       if (_searchController == null) _searchController=StreamController<List<File>>.broadcast();
 
       List<File> files = [];
-      _searchSubscription = searchFiles(event.path, event.nameLike).listen(
-            (data) {
+      _searchSubscription = searchFiles(event.path, event.nameLike).listen((data) {
           files.add(data);
           _searchController!.add(files);
         },
@@ -76,26 +74,14 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
         emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.MOVE_FILE_TO, HttpState.error(error: e.toString()))));
       }
     });
-
-    on<DeleteFile>((event, emit) async {
-      emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.DELETE_FILE, const HttpState.loading())));
-      try{
-        await _deleteFile(file:event.file);
-        emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.DELETE_FILE, const HttpState.done())));
-      }catch(e){
-        emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.DELETE_FILE, HttpState.error(error: e.toString()))));
-      }
-    });
   }
-
 
   Future<List<FileSystemEntity>> _loadDirectoryFiles(String path) async {
     try {
       if (!await StoragePermissions.requestStoragePermissions()) {
         throw Exception("Permission denied");
       }
-      if (Constants.isHiddenFileOrDir(path) ||
-          Constants.excludedPaths.any((pth) => pth.endsWith(path))) {
+      if (Constants.isHiddenFileOrDir(path)) {
         throw Exception("Permission denied");
       }
 
@@ -103,7 +89,7 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
       if (directory.existsSync() == false) {
         throw Exception("Invalid directory path");
       }
-      return directory.listSync(followLinks: false)..removeWhere((fileEntity)=>(fileEntity is Directory) && Constants.excludedPaths.contains(fileEntity.path));
+      return directory.listSync(followLinks: false)..removeWhere((fileEntity)=>(fileEntity is File) && !Utility.isJsonFile(fileEntity));
     } catch (e) {
       throw Exception("Failed to load directory files");
     }
@@ -113,8 +99,7 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
     if (!await StoragePermissions.requestStoragePermissions()) {
       return;
     }
-    if (Constants.isHiddenFileOrDir(directoryPath) ||
-        Constants.excludedPaths.any((path) => path.endsWith(directoryPath))) {
+    if (Constants.isHiddenFileOrDir(directoryPath)) {
       return;
     }
 
@@ -123,11 +108,8 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
       await for (var entity in directory.list(recursive: false, followLinks: false)) {
         try {
           if (entity is File) {
-            final fileName = entity.path
-                .split('/')
-                .last
-                .toLowerCase();
-            if (!fileName.startsWith(userInput.toLowerCase())) continue;
+            final fileName = entity.path.split('/').last.toLowerCase();
+            if (!Utility.isJsonFile(entity) || !fileName.startsWith(userInput.toLowerCase())) continue;
             yield entity;
           } else if (entity is Directory) {
             yield* searchFiles(entity.path, userInput);
@@ -163,17 +145,4 @@ class FilesBloc extends Bloc<FilesEvent, FilesState> {
       throw Exception("Failed to move file: $e");
     }
   }
-
-  Future<void> _deleteFile({required File file}) async {
-    if (!file.existsSync()) {
-      throw Exception("File does not exist");
-    }
-
-    try {
-      await file.delete(); // Permanently deletes the file
-    } catch (e) {
-      throw Exception("Failed to delete the file: $e");
-    }
-  }
-
 }

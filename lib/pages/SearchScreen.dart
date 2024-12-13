@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_file/open_file.dart';
 import 'package:jedi/routes.dart';
-import 'package:jedi/state/files-state/files_bloc.dart';
+import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/utility.dart';
 import 'package:jedi/widgets/FileTile.dart';
@@ -22,7 +22,7 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  late FilesBloc bloc=BlocProvider.of<FilesBloc>(context);
+  late JsonFilesBloc bloc=BlocProvider.of<JsonFilesBloc>(context);
   final BehaviorSubject<String> searchSubject = BehaviorSubject();
 
   @override
@@ -59,7 +59,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: TextFormField(onChanged: (value) => searchSubject.sink.add(value),enableSuggestions: true),
             )),
       ),
-      body: BlocBuilder<FilesBloc, FilesState>(
+      body: BlocBuilder<JsonFilesBloc, JsonFilesState>(
           buildWhen: (previous, current) => previous.searchStream != current.searchStream,
           builder: (context, state) {
             final searchStream = state.searchStream;

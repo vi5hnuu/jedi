@@ -8,28 +8,6 @@ class Constants {
   static const String documentsStoragePath =
       '${Constants.rootStoragePath}/Documents';
 
-  static const List<String> excludedPaths = [
-    // System directories (restricted by OS)
-    '/system',
-    '/vendor',
-    '/proc',
-    '/sys',
-    '/dev',
-    '/data',
-    '/cache',
-    '/storage/self',
-    '/storage/secure',
-
-    // Common Android directories that are unnecessary for search
-    '/storage/emulated/0/Android', // App-specific files
-    '/storage/emulated/0/DCIM/.thumbnails', // Thumbnail cache
-    '/storage/emulated/0/Android/data', // App private data
-    '/storage/emulated/0/Android/obb', // Game data
-    '/storage/emulated/0/WhatsApp', // WhatsApp data (optional)
-    '/storage/emulated/0/Tencent', // Tencent app data (optional)
-    '/storage/emulated/0/.Trash', // Trash or recycle bin
-  ];
-
   static const fileIcons={
     'apk':'assets/file-types/apk.webp',
     'dat':'assets/file-types/dat.webp',
