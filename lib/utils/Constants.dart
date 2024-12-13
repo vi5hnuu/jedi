@@ -1,4 +1,14 @@
+import 'dart:ui';
+
 class Constants {
+  static const Color green100=Color.fromRGBO(214, 239, 216, 1);
+  static const Color green200=Color.fromRGBO(194, 255, 199, 1);
+  static const Color green300=Color.fromRGBO(158, 223, 156, 1);
+  static const Color green400=Color.fromRGBO(98, 130, 93, 1);
+  static const Color green500=Color.fromRGBO(82, 110, 72, 1);
+  static const Color green600=Color.fromRGBO(31, 69, 41, 1);
+
+
   static const String baseUrl = "https://pdf-studio-pdf-craft-api.onrender.com/api/v1";
   static const String processedDirPath = "storage/emulated/0/ilvPdf";
   static const String binDirPath = "storage/emulated/0/ilvPdfBin";
@@ -9,45 +19,8 @@ class Constants {
       '${Constants.rootStoragePath}/Documents';
 
   static const fileIcons={
-    'apk':'assets/file-types/apk.webp',
-    'dat':'assets/file-types/dat.webp',
-    'dll':'assets/file-types/dll.webp',
-    'flv':'assets/file-types/flv.webp',
-    'iso':'assets/file-types/iso.webp',
-    'java':'assets/file-types/java.webp',
-    'log':'assets/file-types/log.webp',
-    'mov':'assets/file-types/mov.webp',
-    'mp4':'assets/file-types/mov.webp',
-    'mp3':'assets/file-types/mp3.webp',
-    'mpeg':'assets/file-types/mpeg.webp',
-    'png':'assets/file-types/png.webp',
-    'ppt':'assets/file-types/ppt.webp',
-    'pptx':'assets/file-types/ppt.webp',
-    'rar':'assets/file-types/rar.webp',
-    'sql':'assets/file-types/sql.webp',
-    'sqlite':'assets/file-types/sql.webp',
-    'tex':'assets/file-types/tex.webp',
-    'tiff':'assets/file-types/tiff.webp',
-    'wav':'assets/file-types/wav.webp',
-    'wma':'assets/file-types/wma.webp',
-    'xml':'assets/file-types/xml.webp',
-    'zip':'assets/file-types/zip.webp',
     'folder':'assets/file-types/folder.webp',
-    'jpg':'assets/file-types/img.webp',
-    'jpeg':'assets/file-types/jpeg.webp',
-    'bmp':'assets/file-types/img.webp',
-    'pdf':'assets/file-types/pdf.webp',
-    'exe':'assets/file-types/exe.webp',
-    'js':'assets/file-types/js.webp',
-    'pub':'assets/file-types/pub.webp',
-    'csv':'assets/file-types/csv.webp',
-    'xls':'assets/file-types/csv.webp',
-    'xlsx':'assets/file-types/csv.webp',
-    'doc':'assets/file-types/doc.webp',
-    'docx':'assets/file-types/docx.webp',
-    'html':'assets/file-types/html.webp',
     'json':'assets/file-types/json.webp',
-    'torrent':'assets/file-types/torrent.webp',
   };
 
   static const Map<String,String> extrnalOpenSupportedFiles={
@@ -77,6 +50,7 @@ class Constants {
     ".htm":    "text/html",
     ".html":   "text/html",
     ".jar":    "application/java-archive",
+    ".json":    "application/json",
     ".java":   "text/plain",
     ".jpeg":   "image/jpeg",
     ".jpg":    "image/jpeg",

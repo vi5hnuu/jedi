@@ -43,20 +43,17 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(
         elevation: 5,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: Image.asset(
-            "assets/logo.webp",
-            fit: BoxFit.fitWidth,
-            width: 124,
-          ),
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: Center(child: Text("Json Editor",style: TextStyle(color: Constants.green100,fontFamily: "bangers",letterSpacing: 2,fontSize: 28,fontWeight: FontWeight.bold),softWrap: false,overflow: TextOverflow.visible,)),
         ),
-        backgroundColor: Colors.black,
-        leadingWidth: 112,
+        actions: [
+          IconButton(onPressed: () => GoRouter.of(context).pushNamed(AppRoutes.searchRoute.name), icon: const Icon(Icons.search,color: Constants.green100,)),
+        ],
         bottom: PreferredSize(preferredSize: const Size(double.infinity,  60),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: TextFormField(onChanged: (value) => searchSubject.sink.add(value),enableSuggestions: true),
+              child: TextFormField(onChanged: (value) => searchSubject.sink.add(value),enableSuggestions: true,style: TextStyle(color: Constants.green100,fontSize: 16),decoration: InputDecoration(border: InputBorder.none),),
             )),
       ),
       body: BlocBuilder<JsonFilesBloc, JsonFilesState>(
@@ -71,11 +68,14 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0,vertical: 8),
-                    child: Text("Total ${snapshot.data?.length ?? 0} files found.",style: TextStyle(fontWeight: FontWeight.bold),),
+                    child: Text("Total ${snapshot.data?.length ?? 0} Json files found.",style: TextStyle(fontWeight: FontWeight.bold),),
                   ),
                   Expanded(child: ListView.builder(itemCount: snapshot.data?.length ?? 0,itemBuilder: (context, index) {
                     final File file=snapshot.data![index];
-                    return FileTile(file: file,onPress: () => _openFile(file));
+                    return Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: FileTile(file: file,onPress: () => _openFile(file)),
+                    );
                   },))
                 ],
               );
@@ -86,8 +86,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   _openFile(File file) async {
-    if(Utility.isPdf(file.path)) GoRouter.of(context).pushNamed(AppRoutes.pdfFilePreviewRoute.name,pathParameters: {'pdfFilePath':file.path});
-    else await OpenFile.open(file.path,type: Constants.extrnalOpenSupportedFiles[Utility.fileExtension(file)] ?? '*/*');
+    await OpenFile.open(file.path,type: Constants.extrnalOpenSupportedFiles[Utility.fileExtension(file)] ?? '*/*');
   }
 
   @override

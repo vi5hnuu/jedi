@@ -23,7 +23,7 @@ class JsonFilesBloc extends Bloc<JsonFilesEvent, JsonFilesState> {
     on<LoadDirectoryFiles>((event, emit) async {
       emit(state.copyWith(httpStates: state.httpStates.clone()
         ..put(HttpStates.LOAD_DIRECTORY_FILES, const HttpState.loading())));
-      // await Future.delayed(Duration(seconds: 5));
+      // await Future.delayed(Duration(seconds: 20));
       try {
         final files = await _loadDirectoryFiles(event.path);
         files.sort((fileA, fileB){

@@ -12,8 +12,7 @@ class FileTile extends StatelessWidget {
   final bool enabled;
   final bool selected;
   final VoidCallback? onPress;
-  final VoidCallback? onDelete;
-  const FileTile({super.key,required this.file,this.enabled=true,this.selected=false,this.onPress,this.onDelete});
+  const FileTile({super.key,required this.file,this.enabled=true,this.selected=false,this.onPress});
 
   @override
   Widget build(BuildContext context) {
@@ -22,15 +21,17 @@ class FileTile extends StatelessWidget {
     return ListTile(
         enabled: enabled,
         selected: selected,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        splashColor: Constants.green300,
+        tileColor: Constants.green500.withOpacity(0.1),
         selectedTileColor: Colors.green.withOpacity(0.15),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12,vertical: 0),
         selectedColor: Colors.green,
         leading: file is Directory
-            ? fileIcon!=null ? Image.asset(fileIcon,width: 24,fit: BoxFit.fitWidth,) : const Icon(FontAwesomeIcons.solidFolder,
-            color: Colors.yellowAccent)
-            : fileIcon!=null ? Image.asset(fileIcon,width: 24,fit: BoxFit.fitWidth,) : const Icon(FontAwesomeIcons.file,
+            ? fileIcon!=null ? Image.asset(fileIcon,width: 32,fit: BoxFit.fitWidth,) : const Icon(FontAwesomeIcons.solidFolder, color: Colors.yellowAccent)
+            : fileIcon!=null ? Image.asset(fileIcon,width: 32,fit: BoxFit.fitWidth,) : const Icon(FontAwesomeIcons.file,
             color: Colors.orange),
         title: Text(file.path.split('/').last),
-        trailing: file is File ? IconButton(onPressed: onDelete, icon: Icon(Icons.delete,color: onDelete!=null? Colors.red:Colors.grey)) : null,
         subtitle: (file is! Directory) ? Text(Utility.bytesToSize(File(file.path).lengthSync())) : null,
         onTap:onPress
     );

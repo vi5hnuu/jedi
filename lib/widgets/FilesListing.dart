@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:jedi/models/file-selection-config.dart';
+import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/Constants.dart';
@@ -17,18 +19,30 @@ class FilesListing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<JsonFilesBloc,JsonFilesState>(
-        listenWhen: (previous, current) => previous.httpStates[HttpStates.MOVE_FILE_TO]!=current.httpStates[HttpStates.MOVE_FILE_TO],
-        listener: (context, state) {
-          final httpState=state.httpStates[HttpStates.PAGE_NUMBERS];
-          if(httpState?.done==true){
-            NotificationService.showSnackbar(text: "File Delete Success.",color: Colors.green);
-          }else if(httpState?.error!=null){
-            NotificationService.showSnackbar(text: httpState!.error!,color: Colors.red);
-          }else if(httpState?.loading==true){
-            NotificationService.showSnackbar(text: "Deleting file...",color: Colors.lightBlue);
-          }
-        },child:DirectoryFilesListing(excludeShowingDirsPath: config.excludeShowingDirsPath,directoryPath: config.path,onDelete: (file)=> _onDeleteFile(context,file))
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 5,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 12),
+          child: Center(child: Text("Json Editor",style: TextStyle(color: Constants.green100,fontFamily: "bangers",letterSpacing: 2,fontSize: 28,fontWeight: FontWeight.bold),softWrap: false,overflow: TextOverflow.visible,)),
+        ),
+        actions: [
+          IconButton(onPressed: () => GoRouter.of(context).pushNamed(AppRoutes.searchRoute.name), icon: const Icon(Icons.search,color: Constants.green100,)),
+        ],
+      ),
+      body: BlocListener<JsonFilesBloc,JsonFilesState>(
+          listenWhen: (previous, current) => previous.httpStates[HttpStates.MOVE_FILE_TO]!=current.httpStates[HttpStates.MOVE_FILE_TO],
+          listener: (context, state) {
+            final httpState=state.httpStates[HttpStates.PAGE_NUMBERS];
+            if(httpState?.done==true){
+              NotificationService.showSnackbar(text: "File Delete Success.",color: Colors.green);
+            }else if(httpState?.error!=null){
+              NotificationService.showSnackbar(text: httpState!.error!,color: Colors.red);
+            }else if(httpState?.loading==true){
+              NotificationService.showSnackbar(text: "Deleting file...",color: Colors.lightBlue);
+            }
+          },child:DirectoryFilesListing(excludeShowingDirsPath: config.excludeShowingDirsPath,directoryPath: config.path)
+      ),
     );
   }
 

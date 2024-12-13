@@ -4,24 +4,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jedi/models/file-selection-config.dart';
 import 'package:jedi/pages/ErrorPage.dart';
-import 'package:jedi/pages/MainScreen.dart';
 import 'package:jedi/pages/SearchScreen.dart';
 import 'package:jedi/pages/SplashScreen.dart';
-import 'package:jedi/pages/tab-widgets/FilesScreen.dart';
-import 'package:jedi/pages/tab-widgets/HomeScreen.dart';
+import 'package:jedi/pages/FilesScreen.dart';
 import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
+import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/StoragePermissions.dart';
 import 'package:jedi/widgets/FilesListing.dart';
 import 'package:jedi/widgets/FilesManagement.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
-final GlobalKey<NavigatorState> _homeNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'home');
-final GlobalKey<NavigatorState> _filesNavigatorKey =
-    GlobalKey<NavigatorState>(debugLabel: 'files');
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,9 +25,8 @@ void main() {
     DeviceOrientation.portraitDown,
   ]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: Colors.black, // Change to your desired color
-    systemNavigationBarIconBrightness:
-        Brightness.light, // Adjust icons if needed
+    systemNavigationBarColor: Constants.green100, // Change to your desired color
+    systemNavigationBarIconBrightness:Brightness.light, // Adjust icons if needed
   ));
   runApp(NestedTabNavigationExampleApp());
 }
@@ -95,52 +89,24 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
           transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
         ),
       ),
-      StatefulShellRoute.indexedStack(
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (BuildContext context, GoRouterState state,
-            StatefulNavigationShell navigationShell) {
-          return MainScreen(navigationShell: navigationShell);
-        },
-        branches: <StatefulShellBranch>[
-          StatefulShellBranch(
-            navigatorKey: _homeNavigatorKey,
-            routes: <RouteBase>[
-              GoRoute(
-                // The screen to display as the root in the first tab of the
-                // bottom navigation bar.
-                path: AppRoutes.homeRoute.path,
-                name: AppRoutes.homeRoute.name,
-                builder: (BuildContext context, GoRouterState state) =>
-                    const HomeScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            navigatorKey: _filesNavigatorKey,
-            initialLocation: AppRoutes.filesRoute.path,
-            routes: <RouteBase>[
-              GoRoute(
-                path: AppRoutes.filesRoute.path,
-                name: AppRoutes.filesRoute.name,
-                builder: (BuildContext context, GoRouterState state) => const FilesScreen(),
-                routes: [
-                  GoRoute(
-                    path: AppRoutes.filesListingRoute.path,
-                    name: AppRoutes.filesListingRoute.name,
-                    pageBuilder: (context, state){
-                      final config=state.extra as FileSelectionConfig;
-                      return CustomTransitionPage<void>(
-                        key: state.pageKey,
-                        child: FilesListing(config: config),
-                        transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
-                      );
-                    },
-                  ),
-                ]
-              ),
-            ],
-          ),
-        ],
+      GoRoute(
+          path: AppRoutes.filesRoute.path,
+          name: AppRoutes.filesRoute.name,
+          builder: (BuildContext context, GoRouterState state) => const FilesScreen(),
+          routes: [
+            GoRoute(
+              path: AppRoutes.filesListingRoute.path,
+              name: AppRoutes.filesListingRoute.name,
+              pageBuilder: (context, state){
+                final config=state.extra as FileSelectionConfig;
+                return CustomTransitionPage<void>(
+                  key: state.pageKey,
+                  child: FilesListing(config: config),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
+                );
+              },
+            ),
+          ]
       ),
     ],
   );
@@ -158,17 +124,17 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
         canvasColor: Colors.white,
         brightness: Brightness.light,
         // Ensures dark mode defaults
-        scaffoldBackgroundColor: Color.fromRGBO(194, 255, 199, 1),
+        scaffoldBackgroundColor: Constants.green100,
         // Black background
         appBarTheme: AppBarTheme(
-          backgroundColor: Color.fromRGBO(158, 223, 156, 1),
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 20),
-          iconTheme: IconThemeData(color: Colors.white),
+          backgroundColor: Constants.green400,
+          titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
+          iconTheme: IconThemeData(color: Colors.black),
         ),
         textTheme: TextTheme(
-          bodySmall: TextStyle(color: Colors.white), // Primary text color
-          bodyMedium: TextStyle(color: Colors.white), // Secondary text color
-          bodyLarge: TextStyle(color: Colors.white), // AppBar title color
+          bodySmall: TextStyle(fontFamily: 'oxanium',color: Colors.black), // Primary text color
+          bodyMedium: TextStyle(fontFamily: 'oxanium',color: Colors.black), // Secondary text color
+          bodyLarge: TextStyle(fontFamily: 'oxanium',color: Colors.black), // AppBar title color
         ),
       ),
       routerConfig: _router,
