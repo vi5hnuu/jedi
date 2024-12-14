@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:lottie/lottie.dart';
 import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/LoggerSingleton.dart';
@@ -38,6 +40,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if(!mounted) return;
       if(adsInitilized) goToHome();
     });
+    BlocProvider.of<JsonFilesBloc>(context).add(const CreateMainDirs());
     super.initState();
   }
 

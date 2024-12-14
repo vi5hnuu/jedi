@@ -17,16 +17,11 @@ import 'package:jedi/widgets/FileTile.dart';
 
 class DirectoryFilesListing extends StatefulWidget {
   final String directoryPath;
-  final bool? multiSelect;//on null no selection allow
   final List<String> limitSelectionToExtensions;
-  final int? minSelection;
-  final Function(List<File>)? onDoneSelection;
+  final Function(File)? onFileClick;
   final List<String>? excludeShowingDirsPath;
 
-  DirectoryFilesListing({super.key, required this.directoryPath,this.multiSelect,this.limitSelectionToExtensions=const [],this.onDoneSelection,this.minSelection,this.excludeShowingDirsPath}){
-    if(multiSelect==null && (onDoneSelection!=null || minSelection!=null)) throw Exception("multiSelect is disabled but onDownSelection/minSelection is not null");
-    if(multiSelect!=null && onDoneSelection==null) throw Exception("OnDoneSelection is required");
-  }
+  const DirectoryFilesListing({super.key, required this.directoryPath,this.limitSelectionToExtensions=const [],this.onFileClick,this.excludeShowingDirsPath});
 
   @override
   State<DirectoryFilesListing> createState() => _DirectoryFilesListingState();
@@ -94,17 +89,9 @@ class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
                         deletedFiles.remove(file);
                       }
                       return FileTile(file: file,
-                          selected:  _isFileSelected(file),
                           onPress: ()=> _onItemClick(file: file),
                           enabled: file is Directory || widget.limitSelectionToExtensions.isEmpty || widget.limitSelectionToExtensions.contains(Utility.fileExtension(file as File)));
                     })),
-                AnimatedOpacity(opacity:selectedFiles.isNotEmpty ? 1 : 0, duration: Duration(milliseconds: 300),child: selectedFiles.isNotEmpty ? Container(
-                  padding: const EdgeInsets.all(16),
-                  width: double.infinity,
-                  decoration: BoxDecoration(color: Colors.black87),
-                  child: FilledButton(onPressed:widget.onDoneSelection==null || (widget.minSelection!=null && selectedFiles.length<widget.minSelection!) ? null : ()=>widget.onDoneSelection!(selectedFiles),
-                      child: Text("Complete Selection")),
-                ):null)
               ],
             )),
             if (state.isLoading(forr: HttpStates.LOAD_DIRECTORY_FILES))
@@ -114,23 +101,9 @@ class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
     );
   }
 
-  bool _isFileSelected(FileSystemEntity file){
-    if(file is Directory) return false;
-    try{
-      return selectedFiles.firstWhere((selectedFile)=>selectedFile.path==file.path)!=null;
-    }catch(e){
-     return false;
-    }
-  }
-
   _loadDirectoryFiles(String path){
     if(bloc.state.isLoading(forr: HttpStates.LOAD_DIRECTORY_FILES)) return;
     bloc.add(LoadDirectoryFiles(path: pathToDirectory.last));
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   _onItemClick({required FileSystemEntity file}) async {
@@ -139,26 +112,15 @@ class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
         _loadDirectoryFiles((pathToDirectory..add(file.path)).last);
         return;
       }
-
-      if(widget.multiSelect==null){//allow opening file only
-        if(Utility.isPdf(file.path)) {
-          GoRouter.of(context).pushNamed(AppRoutes.pdfFilePreviewRoute.name,pathParameters: {'pdfFilePath':file.path});
-        } else {
-          OpenFile.open(file.path,type: Constants.extrnalOpenSupportedFiles[Utility.fileExtension(file as File)] ?? '*/*');
-        }
-      }else{
-        if(_isFileSelected(file)){
-         setState(()=>selectedFiles.removeWhere((selectedFile)=>selectedFile.path==file.path));
-          return;
-        }
-        if(widget.multiSelect==false){
-          selectedFiles.clear();
-        }
-        setState(()=>selectedFiles.add(file as File));
-      }
+      if(widget.onFileClick!=null) widget.onFileClick!(file as File);
     }catch(e){
       NotificationService.showSnackbar(text: "Something went wrong",color: Colors.red,showCloseIcon: true);
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
 

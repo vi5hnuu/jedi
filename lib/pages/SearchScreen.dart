@@ -32,7 +32,9 @@ class _SearchScreenState extends State<SearchScreen> {
         .listen((value) {
       if (!mounted) return;
       if(!value.isEmpty) bloc.add(SearchFile(path: Constants.rootStoragePath, nameLike: value));
-      else bloc.add(const ResetSearch());
+      else {
+        bloc.add(const ResetSearch());
+      }
       }, cancelOnError: false);
     super.initState();
   }
@@ -61,7 +63,7 @@ class _SearchScreenState extends State<SearchScreen> {
           builder: (context, state) {
             final searchStream = state.searchStream;
             //searchStream will never be null as initial it is null but blockBuilder won't run initially it run only on state change
-            return searchStream==null ? Text("Try seaching something",style: TextStyle(color: Colors.white)) :
+            return searchStream==null ? Center(child: Text("Try seaching Json files",style: const TextStyle(color: Constants.green600,height: 2))) :
             StreamBuilder(stream: searchStream, builder: (context, snapshot) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

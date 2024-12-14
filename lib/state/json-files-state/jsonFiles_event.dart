@@ -26,3 +26,7 @@ class MoveFileTo extends JsonFilesEvent{
 
   const MoveFileTo({required this.to,required this.file});
 }
+
+class CreateMainDirs extends JsonFilesEvent{
+  const CreateMainDirs();
+}

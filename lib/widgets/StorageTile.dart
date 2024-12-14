@@ -6,7 +6,7 @@ import 'package:jedi/utils/Constants.dart';
 class StorageTile extends StatelessWidget {
   final String leadingIconSvgPath;
   final String title;
-  final Widget trailing;
+  final Widget? trailing;
   final VoidCallback? onTap;
   final EdgeInsets? padding;
 
@@ -16,7 +16,7 @@ class StorageTile extends StatelessWidget {
     this.padding,
     required this.leadingIconSvgPath,
     required this.title,
-    required this.trailing
+    this.trailing
   });
 
   @override

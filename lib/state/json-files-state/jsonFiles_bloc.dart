@@ -74,6 +74,17 @@ class JsonFilesBloc extends Bloc<JsonFilesEvent, JsonFilesState> {
         emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.MOVE_FILE_TO, HttpState.error(error: e.toString()))));
       }
     });
+
+    on<CreateMainDirs>((event, emit) async {
+      if(state.isLoading(forr: HttpStates.CREATE_MAIN_DIRS)) return emit(state.copyWith());
+      emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.CREATE_MAIN_DIRS, const HttpState.loading())));
+      try{
+        await _createMainDirs();
+        emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.CREATE_MAIN_DIRS, const HttpState.done())));
+      }catch(e){
+        emit(state.copyWith(httpStates: state.httpStates.clone()..put(HttpStates.CREATE_MAIN_DIRS, HttpState.error(error: e.toString()))));
+      }
+    });
   }
 
   Future<List<FileSystemEntity>> _loadDirectoryFiles(String path) async {
@@ -143,6 +154,16 @@ class JsonFilesBloc extends Bloc<JsonFilesEvent, JsonFilesState> {
       file.renameSync(newFilePath);
     } catch (e) {
       throw Exception("Failed to move file: $e");
+    }
+  }
+
+  Future<void> _createMainDirs() async {
+    final mainDirs=[Constants.downloadsStoragePath,Constants.documentsStoragePath,Constants.processedDirPath];
+    for (var dirPath in mainDirs) {
+      final dir=Directory(dirPath);
+      if(!(await dir.exists())){
+        dir.create(recursive: true);
+      }
     }
   }
 }

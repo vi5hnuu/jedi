@@ -22,7 +22,7 @@ class JsonFilesState extends Equatable with WithHttpState {
   }) {
     return JsonFilesState._(
       files: files ?? this.files,
-      searchStream: searchStream ?? this.searchStream,
+      searchStream: searchStream,
       httpStates: httpStates ?? this.httpStates,
     );
   }

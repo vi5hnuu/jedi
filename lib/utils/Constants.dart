@@ -10,8 +10,7 @@ class Constants {
 
 
   static const String baseUrl = "https://pdf-studio-pdf-craft-api.onrender.com/api/v1";
-  static const String processedDirPath = "storage/emulated/0/ilvPdf";
-  static const String binDirPath = "storage/emulated/0/ilvPdfBin";
+  static const String processedDirPath = "storage/emulated/0/jedi";
   static const String rootStoragePath = "storage/emulated/0";
   static const String downloadsStoragePath =
       '${Constants.rootStoragePath}/Download';

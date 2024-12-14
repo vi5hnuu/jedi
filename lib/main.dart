@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jedi/models/file-selection-config.dart';
 import 'package:jedi/pages/ErrorPage.dart';
+import 'package:jedi/pages/JsonEditor.dart';
+import 'package:jedi/pages/JsonViewer.dart';
 import 'package:jedi/pages/SearchScreen.dart';
 import 'package:jedi/pages/SplashScreen.dart';
 import 'package:jedi/pages/FilesScreen.dart';
@@ -13,7 +17,6 @@ import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/StoragePermissions.dart';
 import 'package:jedi/widgets/FilesListing.dart';
-import 'package:jedi/widgets/FilesManagement.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -67,6 +70,46 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
       ),
       GoRoute(
         parentNavigatorKey: _rootNavigatorKey,
+        name: AppRoutes.jsonViewer.name,
+        path: AppRoutes.jsonViewer.path,
+        redirect: (context, state) async{
+          if((state.extra is! Map<String,Object>) ||
+              ((state.extra as Map<String,Object>)['file'] is! File)) {
+            NotificationService.showSnackbar(text: "No Json file passed",color: Colors.red);
+            return AppRoutes.errorRoute.path;
+          } else if(!await ((state.extra as Map<String,Object>)['file'] as File).exists()){
+            NotificationService.showSnackbar(text: "File does not exists",color: Colors.red);
+            return AppRoutes.errorRoute.path;
+          }
+          return null;
+        },
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+          key: state.pageKey,
+          child: JsonViewer(jsonFile: (state.extra as Map<String,Object>)['file'] as File),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child)),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
+        name: AppRoutes.jsonEditor.name,
+        path: AppRoutes.jsonEditor.path,
+        redirect: (context, state) async{
+          if((state.extra is! Map<String,Object>) ||
+              ((state.extra as Map<String,Object>)['file'] is! File)) {
+            NotificationService.showSnackbar(text: "No Json file passed",color: Colors.red);
+            return AppRoutes.errorRoute.path;
+          } else if(!await ((state.extra as Map<String,Object>)['file'] as File).exists()){
+            NotificationService.showSnackbar(text: "File does not exists",color: Colors.red);
+            return AppRoutes.errorRoute.path;
+          }
+          return null;
+        },
+        pageBuilder: (context, state) => CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: JsonEditor(jsonFile: (state.extra as Map<String,Object>)['file'] as File),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child)),
+      ),
+      GoRoute(
+        parentNavigatorKey: _rootNavigatorKey,
         name: AppRoutes.searchRoute.name,
         path: AppRoutes.searchRoute.path,
         pageBuilder: (context, state) => CustomTransitionPage<void>(
@@ -74,19 +117,6 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
           child: SearchScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) =>
               FadeTransition(opacity: animation, child: child),
-        ),
-      ),
-      GoRoute(
-        redirect: (context, state) {
-          if(state.extra is! FileSelectionConfig) return AppRoutes.errorRoute.path;
-        },
-        parentNavigatorKey: _rootNavigatorKey,
-        path: AppRoutes.fileManagement.path,
-        name: AppRoutes.fileManagement.name,
-        pageBuilder: (context, state) => CustomTransitionPage<void>(
-          key: state.pageKey,
-          child: FilesManagement(config: state.extra as FileSelectionConfig),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) => FadeTransition(opacity: animation, child: child),
         ),
       ),
       GoRoute(
@@ -128,8 +158,8 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
         // Black background
         appBarTheme: AppBarTheme(
           backgroundColor: Constants.green400,
-          titleTextStyle: TextStyle(color: Colors.black, fontSize: 20),
-          iconTheme: IconThemeData(color: Colors.black),
+          titleTextStyle: TextStyle(color: Constants.green100, fontSize: 20),
+          iconTheme: IconThemeData(color: Constants.green100),
         ),
         textTheme: TextTheme(
           bodySmall: TextStyle(fontFamily: 'oxanium',color: Colors.black), // Primary text color
