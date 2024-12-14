@@ -26,10 +26,11 @@ Future<void> prettifyJsonInChunks(List<Object> args) async {
     final lines = prettyContent.split('\n');
 
     final List<String> partial=[];
-    for (final line in lines) {
+    for (int i=0;i<lines.length;i++) {
+      final line=lines[i];
       partial.add(line);
-      await Future.delayed(const Duration(milliseconds: 10));
-      sendPort.send(Result(data: partial)); // Send one line at a time.
+      // await Future.delayed(const Duration(milliseconds: 10));
+      if(i+1==lines.length || partial.length%100==0) sendPort.send(Result(data: partial)); // Send one line at a time.
       await Future.delayed(Duration.zero); // Allow main thread to process.
     }
     sendPort.send(null); // Indicate completion.
@@ -49,7 +50,9 @@ class JsonViewer extends StatefulWidget {
 }
 
 class _JsonViewerState extends State<JsonViewer> {
+  final ScrollController controller=ScrollController();
   final _contentStream=StreamController<List<String>>();
+  ValueNotifier<bool> isStreamClosed=ValueNotifier(false);
   Isolate? _isolate;
 
   @override
@@ -58,8 +61,63 @@ class _JsonViewerState extends State<JsonViewer> {
     _startPrettifying();
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("JSON Viewer"),
+        actions: [
+          IconButton(onPressed: ()=>controller.jumpTo(controller.position.minScrollExtent), icon: Icon(Icons.first_page)),
+          ValueListenableBuilder(valueListenable:isStreamClosed, builder: (context, value,child) => !_contentStream.isClosed ? const Padding(
+            padding: EdgeInsets.only(right: 8.0),
+            child: SpinKitThreeBounce(color: Constants.green100,size: 12),
+          ) : IconButton(onPressed: ()=>controller.jumpTo(controller.position.maxScrollExtent), icon:  Icon(Icons.last_page)),)
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: StreamBuilder<List<String>>(
+          stream: _contentStream.stream,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Stack(
+                children: [
+                  ListView.builder(
+                    controller: controller,
+                    scrollDirection: Axis.vertical,
+                    itemCount: snapshot.data!.length,itemBuilder: (context, index) {
+                    return Text(snapshot.data![index],
+                      softWrap: true,
+                      textAlign: TextAlign.start, );
+                  },),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(color: Colors.black,borderRadius: BorderRadius.circular(4)),
+                      child: RichText(text: TextSpan(text: "Total lines : ",children: [TextSpan(text:"${snapshot.data!.length}",style: TextStyle(fontWeight: FontWeight.bold))])),
+                    ),
+                  )
+                ],
+              );
+            }else if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  "Error: ${snapshot.error}",
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
+            } else {
+              return const Center(child: SpinKitThreeBounce(color: Constants.green600));
+            }
+          },
+        ),
+      ),
+    );
+  }
+
   Future<void> _startPrettifying() async {
-    _killIsolate();
     final receivePort = ReceivePort();
 
     // Spawn the isolate.
@@ -70,12 +128,17 @@ class _JsonViewerState extends State<JsonViewer> {
 
     // Listen for data from the isolate.
     receivePort.listen((data) {
+      if(_contentStream.isClosed) return;
       if (data == null) {
+        _contentStream.close();
+        isStreamClosed.value=true;
         receivePort.close();
       } else if((data as Result).error!=null) {
-        if(!_contentStream.isClosed) _contentStream.addError(data.error!); // Add data to the stream.
+        _contentStream.addError(data.error!); // Add data to the stream.
+        _contentStream.close();
+        isStreamClosed.value=true;
       }else {
-        if(!_contentStream.isClosed) _contentStream.add(data.data!); // Add data to the stream.
+        _contentStream.add(data.data!); // Add data to the stream.
       }
     });
   }
@@ -88,40 +151,8 @@ class _JsonViewerState extends State<JsonViewer> {
   void dispose() {
     _killIsolate();
     _contentStream.close();
+    controller.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("JSON Viewer"),
-      ),
-      body: StreamBuilder<List<String>>(
-        stream: _contentStream.stream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return ListView.builder(itemCount: snapshot.data!.length,itemBuilder: (context, index) {
-              return Text(snapshot.data![index]);
-            },);
-          }else if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Error: ${snapshot.error}",
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  IconButton(onPressed: _startPrettifying, icon: Icon(Icons.refresh,color: Colors.red,size: 32,))
-                ],
-              ),
-            );
-          } else {
-            return const Center(child: SpinKitThreeBounce(color: Constants.green600));
-          }
-        },
-      ),
-    );
-  }
 }

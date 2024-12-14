@@ -76,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     final File file=snapshot.data![index];
                     return Padding(
                       padding: const EdgeInsets.all(6.0),
-                      child: FileTile(file: file,onPress: () => _openFile(file)),
+                      child: FileTile(file: file,onPress: () => _fileClick(file)),
                     );
                   },))
                 ],
@@ -87,8 +87,11 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  _openFile(File file) async {
-    await OpenFile.open(file.path,type: Constants.extrnalOpenSupportedFiles[Utility.fileExtension(file)] ?? '*/*');
+  _fileClick(File file) async {
+    if(!Utility.isJsonFile(file)){
+      throw Exception("Dev error, file must be json");
+    }
+    GoRouter.of(context).pushNamed(AppRoutes.jsonViewer.name,extra: {'file':file});
   }
 
   @override
