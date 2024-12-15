@@ -4,8 +4,10 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:animated_tree_view/animated_tree_view.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/utility.dart';
 import 'package:rxdart/rxdart.dart';
@@ -81,6 +83,13 @@ Future<void> jsonNodesInChunks(List<Object> args) async {
   }
 }
 
+Future<String> serializeTree(List<TreeNode<NodeData>> tree){
+  final List<dynamic> data=[];
+  for(final node in tree){
+    // if(node.data!.toSerializable())
+  }
+  return Future.value("");
+}
 
 class JsonEditor extends StatefulWidget {
   final File jsonFile;
@@ -109,7 +118,32 @@ class _JsonEditorState extends State<JsonEditor> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              switch (value) {
+                case 'save':
+                  _saveFile();
+                  break;
+                case 'copy_to_clipboard':
+                  _copyToClipboard(_contentStream.value);
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'save',
+                child: Text('Save File'),
+              ),
+              const PopupMenuItem(
+                value: 'copy_to_clipboard',
+                child: Text('Copy to Clipboard'),
+              ),
+            ],
+          ),
+        ],
+      ),
       body: SafeArea(child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: StreamBuilder<List<TreeNode<NodeData>>>(
@@ -129,24 +163,18 @@ class _JsonEditorState extends State<JsonEditor> {
                       tree: TreeNode.root()..addAll(snapshot.data!),
                       builder: (context, node) {
                         final nodeval=node.data as NodeData;
-                        final key=nodeval.key ?? (nodeval.extras?['index'] is int && node.level==1 ? ('Index ${nodeval.extras?['index']}').toString() : null) ?? '';
-                        // build your node item here
-                        // return any widget that you need
+                        final indexKey=(nodeval.extras?['index'] is int && node.level==1 ? ('Index ${nodeval.extras?['index']}').toString() : null);
+                        final key=nodeval.key ?? indexKey  ?? '';
                         return   Padding(
                           key: ValueKey(node.key),
-                          padding: const EdgeInsets.symmetric(horizontal: 36.0,vertical: 8.0),
-                          child: RichText(text:TextSpan(text:  key,style: TextStyle(color: Colors.black),children:   [if(key.isNotEmpty && nodeval.value!=null) TextSpan(text:"  :  "),if(nodeval.value!=null) TextSpan(text: nodeval.value)],)),
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0,vertical: 4.0),
+                          child: RichText(text: buildInteractiveTextSpanWithBorder(
+                                        key: key,
+                                        value: nodeval.value,
+                                        onKeyTap: nodeval.key == null ? null : () => _onKeyChange(node as TreeNode<NodeData>),
+                                        onValueTap: nodeval.value == null ? null : () => _onValueChange(node as TreeNode<NodeData>))),
                         );
                       }),
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      padding: EdgeInsets.all(4),
-                      decoration: BoxDecoration(color: Colors.black,borderRadius: BorderRadius.circular(4)),
-                      child: RichText(text: TextSpan(text: "Total lines : ",children: [TextSpan(text:"${snapshot.data!.length}",style: TextStyle(fontWeight: FontWeight.bold))])),
-                    ),
-                  )
                 ],
               );
             }else if (snapshot.hasError) {
@@ -191,8 +219,70 @@ class _JsonEditorState extends State<JsonEditor> {
     });
   }
 
+  Future<void> _saveFile() async {
+    // try {
+    //   final file = File(widget.jsonFile.path);
+    //   await file.writeAsString(widget.jsonTree.toString());
+    //   _showSnackbar('File saved successfully at $_filePath');
+    // } catch (e) {
+    //   _showSnackbar('Failed to save file: $e');
+    // }
+  }
+
+  // Copy to Clipboard Logic
+  Future<void> _copyToClipboard(List<TreeNode<NodeData>> tree) async {
+    // try {
+    //   await Clipboard.setData(ClipboardData(text: widget.jsonTree.toString()));
+    //   NotificationService.showSnackbar(text: 'JSON copied to clipboard',color: Colors.green);
+    // } catch (e) {
+    //   NotificationService.showSnackbar(text: 'Failed to copy to clipboard',color: Colors.red);
+    // }
+  }
+
   _killIsolate(){
     _isolate?.kill(priority: Isolate.immediate);
+  }
+
+  _onKeyChange(TreeNode<NodeData> node) async {
+    if(node.data?.key==null) throw Exception("Dev error, invalid key");
+    /// Shows a dialog for editing the key value.
+    final currentKey=node.data!.key;
+    final controller = TextEditingController(text:currentKey);
+
+    final isChanged=await showDialog(
+      context: context,
+      builder: (context) => updateTextDialog(title: "Edit Key", placeholder: "Enter new key", controller: controller, onUpdate: () {
+        final newKey = controller.text.trim();
+        if (newKey.isEmpty || newKey == currentKey) {
+          NotificationService.showSnackbar(text: "Invalid key (key cannot be empty or same)");
+        }else{
+          node.data!.key=newKey;
+          Navigator.pop(context,true); // Close dialog after update
+        }
+      }, onCancel: () => Navigator.pop(context,false)),
+    );
+    if(isChanged) setState(() {});
+  }
+
+  _onValueChange(TreeNode<NodeData> node) async {
+    if(node.data?.value==null) throw Exception("Dev error, invalid value");
+    /// Shows a dialog for editing the key value.
+    final currentValue=node.data!.value;//primitive
+    final controller = TextEditingController(text:currentValue);
+
+    final isChanged=await showDialog(context: context, builder: (context) {
+      return updateTextDialog(title: "Edit Value", placeholder: "Enter new value", controller: controller, onUpdate: () {
+        final newValue = controller.text.trim();
+        if (newValue.isEmpty || newValue == currentValue) {
+          NotificationService.showSnackbar(text: "Invalid value (value cannot be empty or same)");
+        }else{
+          node.data!.value=newValue;
+          Navigator.pop(context,true); // Close dialog after update
+        }
+      }, onCancel: () => Navigator.pop(context,false));
+    });
+
+    if(isChanged) setState(() {});
   }
 
   @override
@@ -201,4 +291,93 @@ class _JsonEditorState extends State<JsonEditor> {
     _contentStream.close();
     super.dispose();
   }
+
+}
+
+InlineSpan buildInteractiveTextSpanWithBorder({
+  required String key,
+  required dynamic value,
+  required void Function()? onKeyTap,
+  required void Function()? onValueTap,
+}) {
+  return TextSpan(
+    children: [
+      (onKeyTap==null) ? TextSpan(text:  key,style: const TextStyle(color: Colors.black)) : clickableText(
+              onTap: onKeyTap,
+              text: key,
+              backgroundColor: Constants.green600.withOpacity(0.1),
+              textColor: Constants.green600,
+              borderColor: Constants.green600),
+      if (key.isNotEmpty && value != null)
+        const TextSpan(text: " : ",style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 18)), // Separator text
+      if (value != null)
+        clickableText(
+            onTap: onValueTap,
+            text: value.toString(),
+            backgroundColor: Colors.red.withOpacity(0.1),
+            textColor: Colors.redAccent,
+            borderColor: Colors.red)
+    ],
+  );
+}
+
+WidgetSpan clickableText({required String text,VoidCallback? onTap,Color? textColor,Color? borderColor,Color? backgroundColor}){
+  return WidgetSpan(
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          border: Border.all(color: borderColor ?? Constants.green600, width: 1), // Light border
+          borderRadius: BorderRadius.circular(4),
+          color: backgroundColor ?? Constants.green600.withOpacity(0.1), // Optional light background
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: textColor ?? Constants.green600,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
+SimpleDialog updateTextDialog({required String title,required String placeholder,required TextEditingController controller,required VoidCallback onUpdate,required VoidCallback onCancel}){
+  return SimpleDialog(
+      title: Text(title),
+      contentPadding: const EdgeInsets.all(24),
+      backgroundColor: Constants.green100,
+      children: [
+        TextFormField(
+          controller: controller,
+          decoration: InputDecoration(
+              hintText: placeholder,
+              enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Constants.green400)),
+              focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Constants.green600)),
+              border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(4)))
+          ),
+        ),
+        const SizedBox(height: 10,),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FilledButton(
+              style:FilledButton.styleFrom(backgroundColor: Colors.red,padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 0)),
+              onPressed: onCancel, // Close dialog on cancel
+              child: const Text("Cancel"),
+            ),
+            const SizedBox(width: 10,),
+            FilledButton(
+              style:FilledButton.styleFrom(backgroundColor: Colors.green,padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 0)),
+              onPressed: onUpdate,
+              child: const Text("Update"),
+            ),
+          ],
+        )
+      ]
+  );
 }
