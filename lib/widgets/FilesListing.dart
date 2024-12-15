@@ -10,6 +10,7 @@ import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/httpStates.dart';
+import 'package:jedi/widgets/BannerAdd.dart';
 import 'package:jedi/widgets/DirectoryFilesListing.dart';
 
 class FilesListing extends StatelessWidget {
@@ -30,7 +31,10 @@ class FilesListing extends StatelessWidget {
           IconButton(onPressed: () => GoRouter.of(context).pushNamed(AppRoutes.searchRoute.name), icon: const Icon(Icons.search,color: Constants.green100,)),
         ],
       ),
-      body: DirectoryFilesListing(onFileClick: config.onFileClick,excludeShowingDirsPath: config.excludeShowingDirsPath,directoryPath: config.path),
+      body: Flex(direction: Axis.vertical,children: [
+        Expanded(child: DirectoryFilesListing(onFileClick: config.onFileClick,excludeShowingDirsPath: config.excludeShowingDirsPath,directoryPath: config.path)),
+        const BannerAdd()
+      ],),
     );
   }
 }

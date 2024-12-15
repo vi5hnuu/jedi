@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:jedi/singletons/AdsSingleton.dart';
 import 'package:jedi/utils/Constants.dart';
 
 class Result {
@@ -57,6 +58,7 @@ class _JsonViewerState extends State<JsonViewer> {
 
   @override
   void initState() {
+    AdsSingleton().dispatch(LoadInterstitialAd());
     super.initState();
     _startPrettifying();
   }

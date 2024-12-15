@@ -7,6 +7,7 @@ import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:jedi/singletons/AdsSingleton.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/utility.dart';
@@ -173,6 +174,7 @@ class _JsonEditorState extends State<JsonEditor> {
 
   @override
   void initState() {
+    AdsSingleton().dispatch(LoadInterstitialAd());
     if(!Utility.isJsonFile(widget.jsonFile) || !widget.jsonFile.existsSync()) throw Exception("Dev error");
     _startPrettifying();
     super.initState();

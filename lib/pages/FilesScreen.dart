@@ -8,10 +8,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jedi/models/file-selection-config.dart';
 import 'package:jedi/routes.dart';
+import 'package:jedi/singletons/AdsSingleton.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/StoragePermissions.dart';
 import 'package:jedi/utils/utility.dart';
+import 'package:jedi/widgets/BannerAdd.dart';
 import 'package:jedi/widgets/CustomAppBar.dart';
 import 'package:jedi/widgets/StorageTile.dart';
 import 'package:rxdart/rxdart.dart';
@@ -46,26 +48,30 @@ class _FilesScreenState extends State<FilesScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
+        child: Flex(
+          direction: Axis.vertical,
           children: [
-            Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(left: 12.0,top: 24.0),
-                  child: Row(children: [
-                    Text("Json Storage",style: TextStyle(color: Constants.green600,fontSize: 26,fontWeight: FontWeight.w800),),
-                  ],),
-                ),
-                Column(
-                  children: [
-                    StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.rootStoragePath)),leadingIconSvgPath: "assets/icons/hard-disk.svg",title: "Internal Storage",),
-                    StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.downloadsStoragePath)),leadingIconSvgPath: "assets/icons/downloads.svg",title: "Downloads",),
-                    StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.documentsStoragePath)),leadingIconSvgPath: "assets/icons/documents.svg",title: "Documents",),
-                    // StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.processedDirPath)),leadingIconSvgPath: "assets/icons/folder-management.svg",title: "Processed Json Files",),
-                  ],
-                )
-              ],
+            Expanded(
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(left: 12.0,top: 24.0),
+                    child: Row(children: [
+                      Text("Json Storage",style: TextStyle(color: Constants.green600,fontSize: 26,fontWeight: FontWeight.w800),),
+                    ],),
+                  ),
+                  Column(
+                    children: [
+                      StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.rootStoragePath)),leadingIconSvgPath: "assets/icons/hard-disk.svg",title: "Internal Storage",),
+                      StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.downloadsStoragePath)),leadingIconSvgPath: "assets/icons/downloads.svg",title: "Downloads",),
+                      StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.documentsStoragePath)),leadingIconSvgPath: "assets/icons/documents.svg",title: "Documents",),
+                      // StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.processedDirPath)),leadingIconSvgPath: "assets/icons/folder-management.svg",title: "Processed Json Files",),
+                    ],
+                  )
+                ],
+              ),
             ),
+            const BannerAdd()
           ],
         ),
       ),

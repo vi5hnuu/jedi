@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jedi/singletons/AdsSingleton.dart';
+import 'package:jedi/widgets/BannerAdd.dart';
 import 'package:open_file/open_file.dart';
 import 'package:jedi/routes.dart';
 import 'package:jedi/state/json-files-state/jsonFiles_bloc.dart';
@@ -63,25 +65,29 @@ class _SearchScreenState extends State<SearchScreen> {
           builder: (context, state) {
             final searchStream = state.searchStream;
             //searchStream will never be null as initial it is null but blockBuilder won't run initially it run only on state change
-            return searchStream==null ? Center(child: Text("Try seaching Json files",style: const TextStyle(color: Constants.green600,height: 2))) :
-            StreamBuilder(stream: searchStream, builder: (context, snapshot) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0,vertical: 8),
-                    child: Text("Total ${snapshot.data?.length ?? 0} Json files found.",style: TextStyle(fontWeight: FontWeight.bold),),
-                  ),
-                  Expanded(child: ListView.builder(itemCount: snapshot.data?.length ?? 0,itemBuilder: (context, index) {
-                    final File file=snapshot.data![index];
-                    return Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: FileTile(file: file,onPress: (offset) => _fileClick(RelativeRect.fromLTRB(offset.dx, offset.dy, 0, 0),file)),
-                    );
-                  },))
-                ],
-              );
-            },);
+            return Flex(direction: Axis.vertical,
+            children: [
+              Expanded(child: searchStream==null ? Center(child: Text("Try seaching Json files",style: const TextStyle(color: Constants.green600,height: 2))) :
+              StreamBuilder(stream: searchStream, builder: (context, snapshot) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0,vertical: 8),
+                      child: Text("Total ${snapshot.data?.length ?? 0} Json files found.",style: TextStyle(fontWeight: FontWeight.bold),),
+                    ),
+                    Expanded(child: ListView.builder(itemCount: snapshot.data?.length ?? 0,itemBuilder: (context, index) {
+                      final File file=snapshot.data![index];
+                      return Padding(
+                        padding: const EdgeInsets.all(6.0),
+                        child: FileTile(file: file,onPress: (offset) => _fileClick(RelativeRect.fromLTRB(offset.dx, offset.dy, 0, 0),file)),
+                      );
+                    },))
+                  ],
+                );
+              },)),
+              const BannerAdd()
+            ],);
           }),
 
     );
