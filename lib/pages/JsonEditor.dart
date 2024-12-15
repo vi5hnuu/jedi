@@ -4,14 +4,26 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
 import 'package:animated_tree_view/animated_tree_view.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/utils/Constants.dart';
 import 'package:jedi/utils/utility.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
+
+/*
+* Coming in future
+*
+* how deserialization happen
+*   if there is no key -> means there is value like int,string
+*   if there is no value -> means its a key of primitive,list,object
+*   if there is both key and value -> means its key->primitive
+*
+* Reverse to serialize
+* */
+
 
 final uuid=Uuid();
 class Result {
@@ -27,6 +39,21 @@ class NodeData{
   Map<String,dynamic>? extras;
   
   NodeData({this.value,this.key,this.extras});
+}
+
+class ActionStatus{
+  bool? loading;
+  String? error;
+
+  ActionStatus({this.loading,this.error});
+
+  isLoading(){
+    return loading==true;
+  }
+
+  isError(){
+    return error!=null;
+  }
 }
 
 TreeNode<NodeData> _createNode(String? dataKey,dynamic value){
@@ -83,12 +110,38 @@ Future<void> jsonNodesInChunks(List<Object> args) async {
   }
 }
 
-Future<String> serializeTree(List<TreeNode<NodeData>> tree){
-  final List<dynamic> data=[];
-  for(final node in tree){
-    // if(node.data!.toSerializable())
+Future<String> serializeTree(List<TreeNode<NodeData>> tree) async {
+  // Helper function to serialize a node
+  dynamic serializeNode(TreeNode<NodeData> node) {
+    final data = node.data!;
+    if(data.key==null) {
+      return node.data!.value;
+    } else if(data.value==null){
+      if(node.children.isEmpty) return {data.key!.replaceAll('#', '.'):[]};
+
+      final childs=node.children.values.toList();
+      final firstNode=(childs.first as TreeNode<NodeData>);
+      final isMap=firstNode.data?.key!=null && (firstNode.data?.value!=null || firstNode.children.isNotEmpty);
+      final dynamic mp=isMap ? {} : [];
+
+      for (var child in childs){
+        child=child as TreeNode<NodeData>;
+        final serializedChild=serializeNode(child);
+        if(isMap){
+          (mp as Map).addAll(serializedChild);
+        }else{
+          (mp as List).add(serializedChild);
+        }
+      }
+      return {data.key!.replaceAll('#', '.'):mp};
+    }else{
+     return {data.key!.replaceAll('#', '.'):node.data!.value};
+    }
   }
-  return Future.value("");
+
+  // Serialize the root list of nodes
+  final serialized = tree.map(serializeNode).toList();
+  return jsonEncode(serialized.length == 1 ? serialized.first : serialized);
 }
 
 class JsonEditor extends StatefulWidget {
@@ -104,9 +157,7 @@ class _JsonEditorState extends State<JsonEditor> {
   final _contentStream=BehaviorSubject<List<TreeNode<NodeData>>>();
   ValueNotifier<bool> isStreamClosed=ValueNotifier(false);
   Isolate? _isolate;
-  var contentLoading=false;
-  String? contentError;
-  String? content;
+  ActionStatus _saveStatus=ActionStatus();
 
   @override
   void initState() {
@@ -119,76 +170,86 @@ class _JsonEditorState extends State<JsonEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title:  ValueListenableBuilder(valueListenable: isStreamClosed,builder: (context, isStreamClosed, child)=>isStreamClosed ? Text("Json Editor",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 24),) : SpinKitPouringHourGlass(color: Colors.white,size: 24,)),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              switch (value) {
-                case 'save':
-                  _saveFile();
-                  break;
-                case 'copy_to_clipboard':
-                  _copyToClipboard(_contentStream.value);
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'save',
-                child: Text('Save File'),
-              ),
-              const PopupMenuItem(
-                value: 'copy_to_clipboard',
-                child: Text('Copy to Clipboard'),
-              ),
-            ],
-          ),
+          ValueListenableBuilder(valueListenable: isStreamClosed,builder: (context, isStreamClosed, child) {
+            return PopupMenuButton<String>(
+              onSelected:  (value) async {
+                switch (value) {
+                  case 'save':
+                    _saveFile();
+                    break;
+                  case 'copy_to_clipboard':
+                    _copyToClipboard(_contentStream.value);
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  enabled: isStreamClosed,
+                  value: 'save',
+                  child: Text('Save File'),
+                ),
+                PopupMenuItem(
+                  enabled: isStreamClosed,
+                  value: 'copy_to_clipboard',
+                  child: Text('Copy to Clipboard'),
+                ),
+              ],
+            );
+          },)
         ],
       ),
-      body: SafeArea(child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: StreamBuilder<List<TreeNode<NodeData>>>(
-          stream: _contentStream.stream,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              return Stack(
-                children: [
-                  TreeView.simple(
-                    key: ValueKey('tree'),
-                      indentation: const Indentation(width: 16,style: IndentStyle.roundJoint,thickness: 2,color: Constants.green600),
-                      shrinkWrap: true,
-                      showRootNode: false,
-                      expansionIndicatorBuilder: (_, tree) => PlusMinusIndicator(tree: tree,alignment: Alignment.centerRight,color: Constants.green600),
-                      expansionBehavior: ExpansionBehavior.none,
-                      focusToNewNode: false,
-                      tree: TreeNode.root()..addAll(snapshot.data!),
-                      builder: (context, node) {
-                        final nodeval=node.data as NodeData;
-                        final indexKey=(nodeval.extras?['index'] is int && node.level==1 ? ('Index ${nodeval.extras?['index']}').toString() : null);
-                        final key=nodeval.key ?? indexKey  ?? '';
-                        return   Padding(
-                          key: ValueKey(node.key),
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0,vertical: 4.0),
-                          child: RichText(text: buildInteractiveTextSpanWithBorder(
-                                        key: key,
-                                        value: nodeval.value,
-                                        onKeyTap: nodeval.key == null ? null : () => _onKeyChange(node as TreeNode<NodeData>),
-                                        onValueTap: nodeval.value == null ? null : () => _onValueChange(node as TreeNode<NodeData>))),
-                        );
-                      }),
-                ],
-              );
-            }else if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  "Error: ${snapshot.error}",
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            } else {
-              return const Center(child: SpinKitThreeBounce(color: Constants.green600));
-            }
-          },
-        )
+      body: SafeArea(child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: StreamBuilder<List<TreeNode<NodeData>>>(
+              stream: _contentStream.stream,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Stack(
+                    children: [
+                      TreeView.simple(
+                          key: ValueKey('tree'),
+                          indentation: const Indentation(width: 16,style: IndentStyle.roundJoint,thickness: 2,color: Constants.green600),
+                          shrinkWrap: true,
+                          showRootNode: false,
+                          expansionIndicatorBuilder: (_, tree) => PlusMinusIndicator(tree: tree,alignment: Alignment.centerRight,color: Constants.green600),
+                          expansionBehavior: ExpansionBehavior.none,
+                          focusToNewNode: false,
+                          tree: TreeNode.root()..addAll(snapshot.data!),
+                          builder: (context, node) {
+                            final nodeval=node.data as NodeData;
+                            final indexKey=(nodeval.extras?['index'] is int && node.level==1 ? ('Index ${nodeval.extras?['index']}').toString() : null);
+                            final key=nodeval.key ?? indexKey  ?? '';
+                            return   Padding(
+                              key: ValueKey(node.key),
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0,vertical: 4.0),
+                              child: RichText(text: buildInteractiveTextSpanWithBorder(
+                                  key: key,
+                                  value: nodeval.value,
+                                  onKeyTap: nodeval.key == null ? null : () => _onKeyChange(node as TreeNode<NodeData>),
+                                  onValueTap: nodeval.value == null ? null : () => _onValueChange(node as TreeNode<NodeData>))),
+                            );
+                          }),
+                    ],
+                  );
+                }else if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      "Error: ${snapshot.error}",
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                } else {
+                  return const Center(child: SpinKitThreeBounce(color: Constants.green600));
+                }
+              },
+            ),
+          ),
+          if(_saveStatus.isLoading()) Container(decoration: const BoxDecoration(color: Colors.black54),child: Center(child: SpinKitThreeBounce(color: Colors.green,size: 45,),),)
+        ],
       )),
     );
   }
@@ -220,23 +281,26 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   Future<void> _saveFile() async {
-    // try {
-    //   final file = File(widget.jsonFile.path);
-    //   await file.writeAsString(widget.jsonTree.toString());
-    //   _showSnackbar('File saved successfully at $_filePath');
-    // } catch (e) {
-    //   _showSnackbar('Failed to save file: $e');
-    // }
+    try{
+      setState(() =>_saveStatus=ActionStatus(loading: true));
+      final data= await serializeTree(_contentStream.value);
+      await widget.jsonFile.writeAsString(data,mode: FileMode.write,flush: true);
+      setState(() =>_saveStatus=ActionStatus());
+      NotificationService.showSnackbar(text: "Json saved successfully",color: Colors.green);
+    }catch(e){
+      setState(() =>_saveStatus=ActionStatus(error: "Failed to save json"));
+      NotificationService.showSnackbar(text: "Failed to save json",color: Colors.red);
+    }
   }
 
   // Copy to Clipboard Logic
   Future<void> _copyToClipboard(List<TreeNode<NodeData>> tree) async {
-    // try {
-    //   await Clipboard.setData(ClipboardData(text: widget.jsonTree.toString()));
-    //   NotificationService.showSnackbar(text: 'JSON copied to clipboard',color: Colors.green);
-    // } catch (e) {
-    //   NotificationService.showSnackbar(text: 'Failed to copy to clipboard',color: Colors.red);
-    // }
+    try {
+      await Clipboard.setData(ClipboardData(text: await serializeTree(_contentStream.value)));
+      NotificationService.showSnackbar(text: 'JSON copied to clipboard',color: Colors.green);
+    } catch (e) {
+      NotificationService.showSnackbar(text: 'Failed to copy to clipboard',color: Colors.red);
+    }
   }
 
   _killIsolate(){
