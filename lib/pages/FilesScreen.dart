@@ -72,11 +72,12 @@ class _FilesScreenState extends State<FilesScreen> {
     );
   }
 
-  _onFileClick(File file){
+  _onFileClick(RelativeRect position,File file){
     if(!Utility.isJsonFile(file)){
       throw Exception("Dev error, file must be json");
     }
-    router.pushNamed(AppRoutes.jsonViewer.name,extra: {'file':file});
+    showMenu(context: context, position: position, items: [PopupMenuItem(child: Text("Json Viewer"),onTap: () => GoRouter.of(context).pushNamed(AppRoutes.jsonViewer.name,extra: {'file':file}),),
+      PopupMenuItem(child: Text("Json Editor"),onTap: () => GoRouter.of(context).pushNamed(AppRoutes.jsonEditor.name,extra: {'file':file}),)]);
   }
 }
 

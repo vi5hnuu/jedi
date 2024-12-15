@@ -18,7 +18,7 @@ import 'package:jedi/widgets/FileTile.dart';
 class DirectoryFilesListing extends StatefulWidget {
   final String directoryPath;
   final List<String> limitSelectionToExtensions;
-  final Function(File)? onFileClick;
+  final Function(RelativeRect,File)? onFileClick;
   final List<String>? excludeShowingDirsPath;
 
   const DirectoryFilesListing({super.key, required this.directoryPath,this.limitSelectionToExtensions=const [],this.onFileClick,this.excludeShowingDirsPath});
@@ -89,7 +89,7 @@ class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
                         deletedFiles.remove(file);
                       }
                       return FileTile(file: file,
-                          onPress: ()=> _onItemClick(file: file),
+                          onPress: (offset)=> _onItemClick(position:RelativeRect.fromLTRB(offset.dx, offset.dy, 0, 0),file: file),
                           enabled: file is Directory || widget.limitSelectionToExtensions.isEmpty || widget.limitSelectionToExtensions.contains(Utility.fileExtension(file as File)));
                     })),
               ],
@@ -106,13 +106,13 @@ class _DirectoryFilesListingState extends State<DirectoryFilesListing> {
     bloc.add(LoadDirectoryFiles(path: pathToDirectory.last));
   }
 
-  _onItemClick({required FileSystemEntity file}) async {
+  _onItemClick({required RelativeRect position,required FileSystemEntity file}) async {
     try{
       if(file is Directory){
         _loadDirectoryFiles((pathToDirectory..add(file.path)).last);
         return;
       }
-      if(widget.onFileClick!=null) widget.onFileClick!(file as File);
+      if(widget.onFileClick!=null) widget.onFileClick!(position,file as File);
     }catch(e){
       NotificationService.showSnackbar(text: "Something went wrong",color: Colors.red,showCloseIcon: true);
     }

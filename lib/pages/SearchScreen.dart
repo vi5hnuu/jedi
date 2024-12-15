@@ -76,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     final File file=snapshot.data![index];
                     return Padding(
                       padding: const EdgeInsets.all(6.0),
-                      child: FileTile(file: file,onPress: () => _fileClick(file)),
+                      child: FileTile(file: file,onPress: (offset) => _fileClick(RelativeRect.fromLTRB(offset.dx, offset.dy, 0, 0),file)),
                     );
                   },))
                 ],
@@ -87,11 +87,12 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  _fileClick(File file) async {
+  _fileClick(RelativeRect position,File file) async {
     if(!Utility.isJsonFile(file)){
       throw Exception("Dev error, file must be json");
     }
-    GoRouter.of(context).pushNamed(AppRoutes.jsonViewer.name,extra: {'file':file});
+    showMenu(context: context, position: position, items: [PopupMenuItem(child: Text("Json Viewer"),onTap: () => GoRouter.of(context).pushNamed(AppRoutes.jsonViewer.name,extra: {'file':file}),),
+      PopupMenuItem(child: Text("Json Editor"),onTap: () => GoRouter.of(context).pushNamed(AppRoutes.jsonEditor.name,extra: {'file':file}),)]);
   }
 
   @override
