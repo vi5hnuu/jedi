@@ -24,7 +24,7 @@ class _ErrorpageState extends State<Errorpage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black26,
-      appBar: AppBar(title: Text("Something went wrong"),backgroundColor: Colors.red,elevation: 10,),
+      appBar: AppBar(title: ErrorReason.STORAGE_PERMISSION_DENIED==widget.reason ? Text("No Storage permission") : Text("Something went wrong"),backgroundColor: Colors.red,elevation: 10,),
       body: ErrorView(subtitle: getSubTitle()),
     );
   }
@@ -34,7 +34,7 @@ class _ErrorpageState extends State<Errorpage> {
       case ErrorReason.STORAGE_PERMISSION_DENIED:{
         return Column(
           children: [
-            Text("We need storage permision to operate.",style: TextStyle(color: Colors.grey,fontWeight: FontWeight.bold,fontSize: 16),),
+            Text("We need storage permision to operate.",textAlign: TextAlign.center,style: TextStyle(color: Colors.grey,fontWeight: FontWeight.bold,fontSize: 16),),
             Container(padding: EdgeInsets.symmetric(vertical: 12),width: double.infinity,child: OutlinedButton(onPressed: () async{
               final granted=await StoragePermissions.requestStoragePermissions();
               if(granted) GoRouter.of(context).goNamed(AppRoutes.filesRoute.name);

@@ -61,7 +61,7 @@ class _FilesScreenState extends State<FilesScreen> {
                     StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.rootStoragePath)),leadingIconSvgPath: "assets/icons/hard-disk.svg",title: "Internal Storage",),
                     StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.downloadsStoragePath)),leadingIconSvgPath: "assets/icons/downloads.svg",title: "Downloads",),
                     StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.documentsStoragePath)),leadingIconSvgPath: "assets/icons/documents.svg",title: "Documents",),
-                    StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.processedDirPath)),leadingIconSvgPath: "assets/icons/folder-management.svg",title: "Processed Json Files",),
+                    // StorageTile(onTap: () => router.pushNamed(AppRoutes.filesListingRoute.name,extra: FileSelectionConfig(onFileClick:_onFileClick ,limitToExtensions: ['.json'],path: Constants.processedDirPath)),leadingIconSvgPath: "assets/icons/folder-management.svg",title: "Processed Json Files",),
                   ],
                 )
               ],
