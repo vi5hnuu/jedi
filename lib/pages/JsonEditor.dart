@@ -17,12 +17,17 @@ import 'package:uuid/uuid.dart';
 
 /*
 * Coming in future
-*
-* how deserialization happen
-*   if there is no key -> means there is value like int,string
-*   if there is no value -> means its a key of primitive,list,object
-*   if there is both key and value -> means its key->primitive
-*
+  In list items can be primitive,object,list
+  for object,list a dummy node is created , know why ?
+  *
+  * eg : {'x':[5,{'name':'vishnu','age':'25'},[5]]}
+  * in above object for node with key x we have value type list
+  * iterating list
+  *   for item 1 we have node with value type primitive and key null -> return 5
+  *   for item 2 we have value type object and key null -> obviously value=null but have childs that makes up {'name':'vishnu','age':'25'}
+  *   item 2 makes a node called dummy node with key,value null (same for item 3)
+  *
+  *   dummy node can never be primitive** why ?
 * Reverse to serialize
 * */
 
@@ -151,7 +156,6 @@ Future<void> jsonNodesInChunks(List<Object> args) async {
 *   first is -> primitive
 *   second is node{key->null,value->null,valutype->object|list,children:{{key:'id',value:1},{key:'name',value:'vishnu'}}}
 * */
-
 
 dynamic serializeNode(TreeNode<NodeData> node) {
   final data = node.data!;
@@ -385,7 +389,7 @@ class _JsonEditorState extends State<JsonEditor> {
   _onKeyChange(TreeNode<NodeData> node) async {
     if(node.data?.key==null) throw Exception("Dev error, invalid key");
     /// Shows a dialog for editing the key value.
-    final currentKey=node.data!.key;
+    final currentKey=node.data!.key.toString();
     final controller = TextEditingController(text:currentKey);
 
     final isChanged=await showDialog(
@@ -420,7 +424,7 @@ class _JsonEditorState extends State<JsonEditor> {
   _onValueChange(TreeNode<NodeData> node) async {
     if(node.data?.value==null) throw Exception("Dev error, invalid value");
     /// Shows a dialog for editing the key value.
-    final currentValue=node.data!.value;//primitive
+    final currentValue=node.data!.value.toString();//primitive
     final controller = TextEditingController(text:currentValue);
 
     final isChanged=await showDialog(context: context, builder: (context) {
@@ -455,13 +459,14 @@ InlineSpan buildInteractiveTextSpanWithBorder({
   required void Function()? onValueTap,
 }) {
   final nodeVal=node.data as NodeData;
+  final isDummyNode=nodeVal.key==null && nodeVal.value==null;
   final indexKey=(nodeVal.extras?['index'] is int && node.level==1 ? ('Index ${nodeVal.extras?['index']}').toString() : null);
   final key=nodeVal.key ?? indexKey  ?? '';
   return TextSpan(
     children: [
-      (onKeyTap==null) ? TextSpan(text:  key,style: const TextStyle(color: Colors.black)) : clickableText(
+      (onKeyTap==null) ? TextSpan(text:  isDummyNode ? (nodeVal.valueType==ValueType.object ? "{...}" : "[...]") : key,style: const TextStyle(color: Colors.black)) : clickableText(
               onTap: onKeyTap,
-              text: key,
+              text: isDummyNode ? (nodeVal.valueType==ValueType.object ? "{...}" : "[...]") : key,
               backgroundColor: (node.data!.isKeyUpdated(node.key) ? Colors.orangeAccent : Constants.green600).withOpacity(0.1),
               textColor: node.data!.isKeyUpdated(node.key) ? Colors.orangeAccent : Constants.green600,
               borderColor: node.data!.isKeyUpdated(node.key) ? Colors.orangeAccent : Constants.green600),
