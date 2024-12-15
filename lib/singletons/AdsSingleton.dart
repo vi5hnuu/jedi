@@ -11,7 +11,7 @@ class AdsSingleton {
 
   AdsSingleton._():_interStitialAd=StreamController<AdEvent>(){
    _interStitialAd.stream.listen((event) {
-    if(event is LoadInterstitialAd) _loadInterstitialAd();
+    // if(event is LoadInterstitialAd) _loadInterstitialAd();
    });
   }
 

@@ -7,6 +7,7 @@ import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:jedi/extensions/map-entensions.dart';
 import 'package:jedi/singletons/AdsSingleton.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/utils/Constants.dart';
@@ -27,6 +28,13 @@ import 'package:uuid/uuid.dart';
 
 
 final uuid=Uuid();
+
+enum ValueType{
+  primitive,
+  list,
+  object
+}
+
 class Result {
   final List<TreeNode<NodeData>>? data;
   final String? error;
@@ -37,9 +45,11 @@ class Result {
 class NodeData{
   String? key;
   dynamic value;//primitive
+  ValueType valueType;
+  ValueType? rootType;//assigned to top level nodes to know while serializing are they really in list or object
   Map<String,dynamic>? extras;
   
-  NodeData({this.value,this.key,this.extras});
+  NodeData({this.rootType,required this.valueType,this.value,this.key,this.extras});
   
   bool isKeyUpdated(String nodeKey){
     if(extras?['updated']?[nodeKey]==null) return false;
@@ -70,9 +80,9 @@ class ActionStatus{
 }
 
 TreeNode<NodeData> _createNode(String? dataKey,dynamic value){
-  final node = TreeNode<NodeData>(key: uuid.v4(),data: NodeData(key: dataKey));
+  final node = TreeNode<NodeData>(key: uuid.v4(),data: NodeData(key: dataKey,valueType: (value is List) ? ValueType.list : (value is Map ? ValueType.object : ValueType.primitive)));
   if(value is! List && value is! Map){
-    node.data=NodeData(key: dataKey,value: value);
+    node.data!.value=value;
   }else{
     node.addAll(_getNodes(value));
   }
@@ -110,8 +120,12 @@ Future<void> jsonNodesInChunks(List<Object> args) async {
 
   try {
     final jsonData = jsonDecode(await jsonFile.readAsString());
-
+    final rootNodeType=jsonData is Map ? ValueType.object : (jsonData is List ? ValueType.list : ValueType.primitive);
     final List<TreeNode<NodeData>> nodes=_getNodes(jsonData);
+
+    //assign root type to top level roots
+    nodes.forEach((node)=>node.data!.rootType=rootNodeType);
+
     for(int i=0;i<nodes.length;i+=20){
       sendPort.send(Result(data: nodes.sublist(i,min(nodes.length, i+20))));
       await Future.delayed(Duration(milliseconds: 500));
@@ -123,38 +137,86 @@ Future<void> jsonNodesInChunks(List<Object> args) async {
   }
 }
 
-Future<String> serializeTree(List<TreeNode<NodeData>> tree) async {
-  // Helper function to serialize a node
-  dynamic serializeNode(TreeNode<NodeData> node) {
-    final data = node.data!;
-    if(data.key==null) {
-      return node.data!.value;
-    } else if(data.value==null){
-      if(node.children.isEmpty) return {data.key!.replaceAll('#', '.'):[]};
 
-      final childs=node.children.values.toList();
-      final firstNode=(childs.first as TreeNode<NodeData>);
-      final isMap=firstNode.data?.key!=null && (firstNode.data?.value!=null || firstNode.children.isNotEmpty);
-      final dynamic mp=isMap ? {} : [];
+/*
+* node ::
+* [key?] : [
+*   primitive,
+*   object
+* ]
+*
+* in this case node->key may or may not be null (doesn't matter)
+* node -> value type -> list
+* for each node child
+*   first is -> primitive
+*   second is node{key->null,value->null,valutype->object|list,children:{{key:'id',value:1},{key:'name',value:'vishnu'}}}
+* */
 
-      for (var child in childs){
-        child=child as TreeNode<NodeData>;
-        final serializedChild=serializeNode(child);
-        if(isMap){
-          (mp as Map).addAll(serializedChild);
-        }else{
-          (mp as List).add(serializedChild);
-        }
-      }
-      return {data.key!.replaceAll('#', '.'):mp};
-    }else{
-     return {data.key!.replaceAll('#', '.'):node.data!.value};
-    }
+
+dynamic serializeNode(TreeNode<NodeData> node) {
+  final data = node.data!;
+  if(node.data?.key==null && node.data?.value==null){
+    return serializeDummyNode(node);
   }
 
+  if(data.valueType==ValueType.primitive) {
+    return data.key!=null ? {data.key:data.value} : data.value;
+  } else if(data.valueType==ValueType.list){
+    final List<dynamic> jsonData = [];
+
+    for (var child in node.children.values.toList()){
+      child=child as TreeNode<NodeData>;
+      final serializedChild=serializeNode(child);
+      jsonData.add(serializedChild);
+    }
+    return data.key!=null ? {data.key:jsonData} : jsonData;
+  }else{ // {key:null,value:null,children:obj}
+    final Map<String,dynamic> jsonData = {};
+
+    for (var child in node.children.values.toList()){
+      child=child as TreeNode<NodeData>;
+      final serializedData=serializeNode(child) as Map;
+      if(serializedData.length>1) throw Exception("Something went wrong");
+      jsonData.put(serializedData.keys.first,serializedData.values.first);
+    }
+    return data.key!=null ? {data.key:jsonData} : jsonData;
+  }
+}
+
+dynamic serializeDummyNode(TreeNode<NodeData> dummyNode){
+  if(dummyNode.data?.key!=null || dummyNode.data?.value!=null) throw Exception("Node is not dummy");
+
+  if(dummyNode.data?.valueType==ValueType.list){
+    final serializedJson=[];
+    for(final child in dummyNode.children.values){
+      serializedJson.add(serializeNode(child as TreeNode<NodeData>));
+    }
+    return serializedJson;
+  }else{//object
+    final Map<String,dynamic> jsonData = {};
+    for (var child in dummyNode.children.values){
+      child=child as TreeNode<NodeData>;
+      final serializedData=serializeNode(child) as Map;
+      if(serializedData.length>1) throw Exception("Something went wrong");
+      jsonData.put(serializedData.keys.first,serializedData.values.first);
+    }
+    return jsonData;
+  }
+}
+
+Future<String> serializeTree(List<TreeNode<NodeData>> tree) async {
+
   // Serialize the root list of nodes
+  if(tree.isEmpty) return "";
   final serialized = tree.map(serializeNode).toList();
-  return jsonEncode(serialized.length == 1 ? serialized.first : serialized);
+
+  if(tree.first.data!.rootType==ValueType.object){
+    final jsonData=Map.fromEntries(serialized.map((item)=>MapEntry((item as Map).keys.first, item.values.first)));
+    return jsonEncode(jsonData);
+  }else if(tree.first.data!.rootType==ValueType.list){
+    return jsonEncode(serialized);
+  }
+  return jsonEncode(serialized.first);
 }
 
 class JsonEditor extends StatefulWidget {
