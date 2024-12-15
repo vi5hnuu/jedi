@@ -39,6 +39,18 @@ class NodeData{
   Map<String,dynamic>? extras;
   
   NodeData({this.value,this.key,this.extras});
+  
+  bool isKeyUpdated(String nodeKey){
+    if(extras?['updated']?[nodeKey]==null) return false;
+    
+    return (extras?['updated']?[nodeKey] as Map).containsKey('key');
+  }
+
+  bool isValueUpdated(String nodeKey){
+    if(extras?['updated']?[nodeKey]==null) return false;
+
+    return (extras?['updated']?[nodeKey] as Map).containsKey('value');
+  }
 }
 
 class ActionStatus{
@@ -220,17 +232,16 @@ class _JsonEditorState extends State<JsonEditor> {
                           focusToNewNode: false,
                           tree: TreeNode.root()..addAll(snapshot.data!),
                           builder: (context, node) {
-                            final nodeval=node.data as NodeData;
-                            final indexKey=(nodeval.extras?['index'] is int && node.level==1 ? ('Index ${nodeval.extras?['index']}').toString() : null);
-                            final key=nodeval.key ?? indexKey  ?? '';
+                            final nodeVal=node.data as NodeData;
+                            final indexKey=(nodeVal.extras?['index'] is int && node.level==1 ? ('Index ${nodeVal.extras?['index']}').toString() : null);
+                            final key=nodeVal.key ?? indexKey  ?? '';
                             return   Padding(
                               key: ValueKey(node.key),
                               padding: const EdgeInsets.symmetric(horizontal: 24.0,vertical: 4.0),
                               child: RichText(text: buildInteractiveTextSpanWithBorder(
-                                  key: key,
-                                  value: nodeval.value,
-                                  onKeyTap: nodeval.key == null ? null : () => _onKeyChange(node as TreeNode<NodeData>),
-                                  onValueTap: nodeval.value == null ? null : () => _onValueChange(node as TreeNode<NodeData>))),
+                                  node:node as TreeNode<NodeData>,
+                                  onKeyTap: nodeVal.key == null ? null : () => _onKeyChange(node),
+                                  onValueTap: nodeVal.value == null ? null : () => _onValueChange(node))),
                             );
                           }),
                     ],
@@ -321,11 +332,25 @@ class _JsonEditorState extends State<JsonEditor> {
           NotificationService.showSnackbar(text: "Invalid key (key cannot be empty or same)");
         }else{
           node.data!.key=newKey;
+          
+          //marked this updated
+          _markUpdated(node,true,currentKey);
           Navigator.pop(context,true); // Close dialog after update
         }
       }, onCancel: () => Navigator.pop(context,false)),
     );
     if(isChanged) setState(() {});
+  }
+  
+  _markUpdated(TreeNode<NodeData> node,bool isKeyUpdated,dynamic oldValue){
+    if(node.data!.extras==null) node.data!.extras=Map();
+    if(node.data!.extras!['updated']==null) node.data!.extras!['updated']=Map();
+    if(node.data!.extras!['updated'][node.key]==null)node.data!.extras!['updated'][node.key]=Map();
+    if(node.data!.extras!['updated'][node.key][isKeyUpdated ? 'key':'value']==(isKeyUpdated ? node.data!.key : node.data!.value)){
+      (node.data!.extras!['updated'][node.key] as Map).remove(isKeyUpdated ? 'key':'value');
+    }else{
+      node.data!.extras!['updated'][node.key][isKeyUpdated ? 'key':'value']=oldValue;
+    }
   }
 
   _onValueChange(TreeNode<NodeData> node) async {
@@ -341,6 +366,8 @@ class _JsonEditorState extends State<JsonEditor> {
           NotificationService.showSnackbar(text: "Invalid value (value cannot be empty or same)");
         }else{
           node.data!.value=newValue;
+          //marked this updated
+          _markUpdated(node,false,currentValue);
           Navigator.pop(context,true); // Close dialog after update
         }
       }, onCancel: () => Navigator.pop(context,false));
@@ -359,33 +386,39 @@ class _JsonEditorState extends State<JsonEditor> {
 }
 
 InlineSpan buildInteractiveTextSpanWithBorder({
-  required String key,
-  required dynamic value,
+  required TreeNode<NodeData> node,
   required void Function()? onKeyTap,
   required void Function()? onValueTap,
 }) {
+  final nodeVal=node.data as NodeData;
+  final indexKey=(nodeVal.extras?['index'] is int && node.level==1 ? ('Index ${nodeVal.extras?['index']}').toString() : null);
+  final key=nodeVal.key ?? indexKey  ?? '';
   return TextSpan(
     children: [
       (onKeyTap==null) ? TextSpan(text:  key,style: const TextStyle(color: Colors.black)) : clickableText(
               onTap: onKeyTap,
               text: key,
-              backgroundColor: Constants.green600.withOpacity(0.1),
-              textColor: Constants.green600,
-              borderColor: Constants.green600),
-      if (key.isNotEmpty && value != null)
+              backgroundColor: (node.data!.isKeyUpdated(node.key) ? Colors.orangeAccent : Constants.green600).withOpacity(0.1),
+              textColor: node.data!.isKeyUpdated(node.key) ? Colors.orangeAccent : Constants.green600,
+              borderColor: node.data!.isKeyUpdated(node.key) ? Colors.orangeAccent : Constants.green600),
+      if (key.isNotEmpty && nodeVal.value != null)
         const TextSpan(text: " : ",style: TextStyle(color: Colors.black,fontWeight: FontWeight.bold,fontSize: 18)), // Separator text
-      if (value != null)
+      if (nodeVal.value != null)
         clickableText(
             onTap: onValueTap,
-            text: value.toString(),
-            backgroundColor: Colors.red.withOpacity(0.1),
-            textColor: Colors.redAccent,
-            borderColor: Colors.red)
+            text: nodeVal.value.toString(),
+            backgroundColor: (node.data!.isValueUpdated(node.key) ? Colors.orangeAccent : Colors.red).withOpacity(0.1),
+            textColor: node.data!.isValueUpdated(node.key) ? Colors.orangeAccent : Colors.redAccent,
+            borderColor: node.data!.isValueUpdated(node.key) ? Colors.orangeAccent : Colors.red)
     ],
   );
 }
 
-WidgetSpan clickableText({required String text,VoidCallback? onTap,Color? textColor,Color? borderColor,Color? backgroundColor}){
+WidgetSpan clickableText({required String text,
+  VoidCallback? onTap,
+  Color? textColor,
+  Color? borderColor,
+  Color? backgroundColor}){
   return WidgetSpan(
     child: GestureDetector(
       onTap: onTap,
