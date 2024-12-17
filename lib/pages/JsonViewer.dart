@@ -4,6 +4,8 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:go_router/go_router.dart';
+import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/AdsSingleton.dart';
 import 'package:jedi/utils/Constants.dart';
 
@@ -51,6 +53,7 @@ class JsonViewer extends StatefulWidget {
 }
 
 class _JsonViewerState extends State<JsonViewer> {
+  late final router=GoRouter.of(context);
   final ScrollController controller=ScrollController();
   final _contentStream=StreamController<List<String>>();
   ValueNotifier<bool> isStreamClosed=ValueNotifier(false);
@@ -69,6 +72,7 @@ class _JsonViewerState extends State<JsonViewer> {
       appBar: AppBar(
         title: const Text("JSON Viewer"),
         actions: [
+          IconButton(onPressed: ()=>router.replaceNamed(AppRoutes.jsonEditor.name,extra: {'file':widget.jsonFile}), icon: Icon(Icons.edit)),
           IconButton(onPressed: ()=>controller.jumpTo(controller.position.minScrollExtent), icon: Icon(Icons.first_page)),
           ValueListenableBuilder(valueListenable:isStreamClosed, builder: (context, value,child) => !_contentStream.isClosed ? const Padding(
             padding: EdgeInsets.only(right: 8.0),

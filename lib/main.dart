@@ -93,14 +93,14 @@ class NestedTabNavigationExampleApp extends StatelessWidget {
         name: AppRoutes.jsonEditor.name,
         path: AppRoutes.jsonEditor.path,
         redirect: (context, state) async{
-          if((state.extra is! Map<String,Object>) ||
-              ((state.extra as Map<String,Object>)['file'] is! File)) {
-            NotificationService.showSnackbar(text: "No Json file passed",color: Colors.red);
-            return AppRoutes.errorRoute.path;
-          } else if(!await ((state.extra as Map<String,Object>)['file'] as File).exists()){
-            NotificationService.showSnackbar(text: "File does not exists",color: Colors.red);
-            return AppRoutes.errorRoute.path;
-          }
+          // if((state.extra is! Map<String,Object>) ||
+          //     ((state.extra as Map<String,Object>)['file'] is! File)) {
+          //   NotificationService.showSnackbar(text: "No Json file passed",color: Colors.red);
+          //   return AppRoutes.errorRoute.path;
+          // } else if(!await ((state.extra as Map<String,Object>)['file'] as File).exists()){
+          //   NotificationService.showSnackbar(text: "File does not exists",color: Colors.red);
+          //   return AppRoutes.errorRoute.path;
+          // }
           return null;
         },
         pageBuilder: (context, state) => CustomTransitionPage<void>(

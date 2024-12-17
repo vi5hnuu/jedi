@@ -7,7 +7,9 @@ import 'package:animated_tree_view/animated_tree_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:go_router/go_router.dart';
 import 'package:jedi/extensions/map-entensions.dart';
+import 'package:jedi/routes.dart';
 import 'package:jedi/singletons/AdsSingleton.dart';
 import 'package:jedi/singletons/NotificationService.dart';
 import 'package:jedi/utils/Constants.dart';
@@ -233,6 +235,7 @@ class JsonEditor extends StatefulWidget {
 }
 
 class _JsonEditorState extends State<JsonEditor> {
+  late final router=GoRouter.of(context);
   final _contentStream=BehaviorSubject<List<TreeNode<NodeData>>>();
   ValueNotifier<bool> isStreamClosed=ValueNotifier(false);
   Isolate? _isolate;
@@ -252,6 +255,7 @@ class _JsonEditorState extends State<JsonEditor> {
       appBar: AppBar(
         title:  ValueListenableBuilder(valueListenable: isStreamClosed,builder: (context, isStreamClosed, child)=>isStreamClosed ? Text("Json Editor",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 24),) : SpinKitPouringHourGlass(color: Colors.white,size: 24,)),
         actions: [
+          IconButton(onPressed: ()=>router.replaceNamed(AppRoutes.jsonViewer.name,extra: {'file':widget.jsonFile}), icon: const Icon(Icons.text_snippet_outlined)),
           ValueListenableBuilder(valueListenable: isStreamClosed,builder: (context, isStreamClosed, child) {
             return PopupMenuButton<String>(
               onSelected:  (value) async {
